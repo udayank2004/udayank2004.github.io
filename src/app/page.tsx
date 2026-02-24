@@ -13,6 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -44,21 +51,19 @@ function progressColor(score: number) {
 export default function Home() {
   const [jobDescription, setJobDescription] = useState("");
   const [resume, setResume] = useState("");
+  const [resumeFileName, setResumeFileName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [showExtractedData, setShowExtractedData] = useState(false);
 
-  const jdFileRef = useRef<HTMLInputElement>(null);
   const resumeFileRef = useRef<HTMLInputElement>(null);
 
-  async function handleFileUpload(
-    file: File,
-    setter: (val: string) => void,
-    fieldName: string
-  ) {
-    setUploadingField(fieldName);
+  async function handleResumeUpload(file: File) {
+    setUploadingField("resume");
     setError(null);
+    setResumeFileName(file.name);
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -68,10 +73,12 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to parse file");
-      setter(data.text);
+      setResume(data.text);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "File upload failed.";
       setError(msg);
+      setResume("");
+      setResumeFileName(null);
     } finally {
       setUploadingField(null);
     }
@@ -109,11 +116,12 @@ export default function Home() {
   function handleReset() {
     setJobDescription("");
     setResume("");
+    setResumeFileName(null);
     setResults(null);
     setError(null);
     setIsLoading(false);
     setUploadingField(null);
-    if (jdFileRef.current) jdFileRef.current.value = "";
+    setShowExtractedData(false);
     if (resumeFileRef.current) resumeFileRef.current.value = "";
   }
 
@@ -125,14 +133,14 @@ export default function Home() {
           Resume AI Optimizer
         </h1>
         <p className="mt-3 text-base text-muted-foreground sm:text-lg">
-          Paste a job description and your resume — get instant, actionable
+          Paste a job description and upload your resume — get instant, actionable
           feedback.
         </p>
       </header>
 
       {/* ── Input Grid ─────────────────────────────────────────── */}
       <section className="mx-auto mb-8 grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Left — Job Description */}
+        {/* Left — Job Description (Text only) */}
         <Card className="border-border/40 bg-card/60 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-lg">
@@ -141,60 +149,58 @@ export default function Home() {
               </Label>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent>
             <Textarea
               id="jd"
               placeholder="Copy the full job description and paste it here…"
-              className="min-h-[220px] resize-y bg-background/50 text-sm leading-relaxed"
+              className="h-[300px] resize-none overflow-y-auto bg-background/50 text-sm leading-relaxed"
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
             />
-            <div className="flex items-center gap-3">
-              <input
-                ref={jdFileRef}
-                type="file"
-                accept=".pdf,.docx,.txt"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handleFileUpload(f, setJobDescription, "jd");
-                  e.target.value = "";
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={uploadingField === "jd"}
-                onClick={() => jdFileRef.current?.click()}
-                className="cursor-pointer text-xs"
-              >
-                {uploadingField === "jd" ? "Extracting…" : "📄 Upload File"}
-              </Button>
-              <span className="text-xs text-muted-foreground">
-                PDF, DOCX, or TXT
-              </span>
-            </div>
           </CardContent>
         </Card>
 
-        {/* Right — Resume */}
+        {/* Right — Resume (Upload only) */}
         <Card className="border-border/40 bg-card/60 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-lg">
-              <Label htmlFor="resume" className="text-base font-semibold">
-                Paste Your Resume Here
+              <Label className="text-base font-semibold">
+                Upload Your Resume
               </Label>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <Textarea
-              id="resume"
-              placeholder="Paste the text of your resume here…"
-              className="min-h-[220px] resize-y bg-background/50 text-sm leading-relaxed"
-              value={resume}
-              onChange={(e) => setResume(e.target.value)}
-            />
+          <CardContent className="flex h-[300px] flex-col items-center justify-center space-y-4">
+            {/* Upload status indicator */}
+            {resumeFileName && resume ? (
+              <div className="flex flex-col items-center gap-2 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10">
+                  <svg className="h-7 w-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-emerald-400">File uploaded successfully</p>
+                <p className="text-xs text-muted-foreground">{resumeFileName}</p>
+              </div>
+            ) : uploadingField === "resume" ? (
+              <div className="flex flex-col items-center gap-2 text-center">
+                <svg className="h-8 w-8 animate-spin text-violet-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <p className="text-sm text-muted-foreground">Extracting text…</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-violet-500/10">
+                  <svg className="h-7 w-7 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                </div>
+                <p className="text-sm text-muted-foreground">Upload a PDF, DOCX, or TXT file</p>
+              </div>
+            )}
+
+            {/* Buttons */}
             <div className="flex items-center gap-3">
               <input
                 ref={resumeFileRef}
@@ -203,7 +209,7 @@ export default function Home() {
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
-                  if (f) handleFileUpload(f, setResume, "resume");
+                  if (f) handleResumeUpload(f);
                   e.target.value = "";
                 }}
               />
@@ -217,15 +223,22 @@ export default function Home() {
               >
                 {uploadingField === "resume" ? "Extracting…" : "📄 Upload File"}
               </Button>
-              <span className="text-xs text-muted-foreground">
-                PDF, DOCX, or TXT
-              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!resume}
+                onClick={() => setShowExtractedData(true)}
+                className="cursor-pointer text-xs disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                👁 Show extracted data
+              </Button>
             </div>
           </CardContent>
         </Card>
       </section>
 
-      {/* ── Analyze Button ─────────────────────────────────────── */}
+      {/* ── Analyze & Reset Buttons ────────────────────────────── */}
       <div className="mx-auto mb-10 flex max-w-5xl items-center justify-center gap-4">
         <Button
           size="lg"
@@ -351,6 +364,28 @@ export default function Home() {
           </Card>
         </section>
       )}
+
+      {/* ── Extracted Data Dialog ───────────────────────────────── */}
+      <Dialog open={showExtractedData} onOpenChange={setShowExtractedData}>
+        <DialogContent className="max-h-[80vh] max-w-2xl overflow-hidden border-border/40 bg-[#0f0f1a]">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">
+              Extracted Resume Data
+              {resumeFileName && (
+                <span className="ml-2 text-sm font-normal text-muted-foreground">
+                  — {resumeFileName}
+                </span>
+              )}
+            </DialogTitle>
+            <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100" />
+          </DialogHeader>
+          <div className="mt-2 max-h-[60vh] overflow-y-auto rounded-lg bg-background/50 p-4">
+            <pre className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+              {resume || "No data extracted yet."}
+            </pre>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

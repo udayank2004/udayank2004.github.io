@@ -1,14 +1,53 @@
 import { NextResponse } from "next/server";
 import Groq from "groq-sdk";
+import { Redis } from "@upstash/redis";
+import crypto from "crypto";
 
 /* ------------------------------------------------------------------ */
 /*  Groq client                                                        */
 /* ------------------------------------------------------------------ */
-const apiKey = process.env.GROQ_API_KEY;
+const groqApiKey = process.env.GROQ_API_KEY;
 
 function getClient() {
-  if (!apiKey) throw new Error("GROQ_API_KEY is not set in .env.local");
-  return new Groq({ apiKey });
+  if (!groqApiKey) throw new Error("GROQ_API_KEY is not set in .env.local");
+  return new Groq({ apiKey: groqApiKey });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Redis client (optional — degrades gracefully if not configured)    */
+/* ------------------------------------------------------------------ */
+const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+function getRedis(): Redis | null {
+  if (!redisUrl || !redisToken) return null;
+  return new Redis({ url: redisUrl, token: redisToken });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+const CACHE_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days
+
+/** Normalize text to ensure minor whitespace differences don't bust the cache */
+function normalize(text: string): string {
+  return text.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/** Create a deterministic fingerprint from JD + Resume */
+function createCacheKey(jd: string, resume: string): string {
+  const hash = crypto
+    .createHash("sha256")
+    .update(normalize(jd) + "||" + normalize(resume))
+    .digest("hex");
+  return `analyze:${hash}`;
+}
+
+function log(level: "info" | "warn" | "error", message: string, meta?: Record<string, unknown>) {
+  const entry = { timestamp: new Date().toISOString(), service: "analyze", level, message, ...meta };
+  if (level === "error") console.error(JSON.stringify(entry));
+  else if (level === "warn") console.warn(JSON.stringify(entry));
+  else console.log(JSON.stringify(entry));
 }
 
 /* ------------------------------------------------------------------ */
@@ -37,7 +76,27 @@ export async function POST(request: Request) {
       );
     }
 
-    // Build the prompt
+    // ── Cache lookup ──────────────────────────────────────────
+    const redis = getRedis();
+    const cacheKey = createCacheKey(jobDescription, resume);
+
+    if (redis) {
+      try {
+        const cached = await redis.get<string>(cacheKey);
+        if (cached) {
+          log("info", "Cache HIT", { cacheKey });
+          const data = typeof cached === "string" ? JSON.parse(cached) : cached;
+          return NextResponse.json({ ...data, cached: true });
+        }
+        log("info", "Cache MISS", { cacheKey });
+      } catch (redisErr) {
+        log("warn", "Redis lookup failed — falling through to LLM", {
+          error: redisErr instanceof Error ? redisErr.message : String(redisErr),
+        });
+      }
+    }
+
+    // ── Build the prompt ──────────────────────────────────────
     const prompt = `You are an expert resume optimizer and ATS (Applicant Tracking System) specialist.
 
 Analyze the following resume against the given job description. Evaluate how well the resume matches the job requirements.
@@ -65,7 +124,7 @@ ${jobDescription}
 RESUME:
 ${resume}`;
 
-    // Call Groq
+    // ── Call Groq ─────────────────────────────────────────────
     const client = getClient();
     const chatCompletion = await client.chat.completions.create({
       model: "llama-3.3-70b-versatile",
@@ -98,11 +157,25 @@ ${resume}`;
       throw new Error("Unexpected response structure from AI model");
     }
 
-    return NextResponse.json({
+    const result = {
       score: Math.round(parsed.score),
       missingKeywords: parsed.missingKeywords,
       suggestions: parsed.suggestions,
-    });
+    };
+
+    // ── Store in cache ────────────────────────────────────────
+    if (redis) {
+      try {
+        await redis.set(cacheKey, JSON.stringify(result), { ex: CACHE_TTL_SECONDS });
+        log("info", "Result cached", { cacheKey, ttl: CACHE_TTL_SECONDS });
+      } catch (redisErr) {
+        log("warn", "Failed to write to Redis cache", {
+          error: redisErr instanceof Error ? redisErr.message : String(redisErr),
+        });
+      }
+    }
+
+    return NextResponse.json({ ...result, cached: false });
   } catch (err: unknown) {
     console.error("Analyze API error:", err);
 
