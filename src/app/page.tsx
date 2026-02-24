@@ -1,6 +1,16 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
+import dynamic from "next/dynamic";
+
+const ResumeViewer = dynamic(() => import("@/components/ResumeViewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
+      Loading PDF viewer…
+    </div>
+  ),
+});
 import {
   Card,
   CardContent,
@@ -24,10 +34,45 @@ import {
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
+interface MissingKeyword {
+  keyword: string;
+  priority: "high" | "medium" | "low";
+  context: string;
+}
+
+interface Suggestion {
+  section: string;
+  suggestion: string;
+  impact: "high" | "medium" | "low";
+}
+
+interface ScoreBreakdown {
+  skills: number;
+  experience: number;
+  education: number;
+  overall: number;
+}
+
 interface AnalysisResult {
   score: number;
-  missingKeywords: string[];
-  suggestions: string[];
+  scoreBreakdown: ScoreBreakdown | null;
+  missingKeywords: MissingKeyword[];
+  suggestions: Suggestion[];
+}
+
+interface TextBlock {
+  x: number;
+  y: number;
+  w: number;
+  text: string;
+  fontSize: number;
+}
+
+interface PageData {
+  pageIndex: number;
+  width: number;
+  height: number;
+  textBlocks: TextBlock[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -57,6 +102,9 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [uploadingField, setUploadingField] = useState<string | null>(null);
   const [showExtractedData, setShowExtractedData] = useState(false);
+  const [resumePages, setResumePages] = useState<PageData[] | null>(null);
+  const [resumeFileUrl, setResumeFileUrl] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
 
   const resumeFileRef = useRef<HTMLInputElement>(null);
 
@@ -74,11 +122,16 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to parse file");
       setResume(data.text);
+      if (data.pages) setResumePages(data.pages);
+      // Create a URL for the raw file so we can render it
+      setResumeFileUrl(URL.createObjectURL(file));
     } catch (err) {
       const msg = err instanceof Error ? err.message : "File upload failed.";
       setError(msg);
       setResume("");
       setResumeFileName(null);
+      setResumePages(null);
+      setResumeFileUrl(null);
     } finally {
       setUploadingField(null);
     }
@@ -117,6 +170,9 @@ export default function Home() {
     setJobDescription("");
     setResume("");
     setResumeFileName(null);
+    setResumePages(null);
+    setResumeFileUrl(null);
+    setActiveSection(null);
     setResults(null);
     setError(null);
     setIsLoading(false);
@@ -318,6 +374,24 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Score Breakdown */}
+              {results.scoreBreakdown && (
+                <>
+                  <Separator />
+                  <div>
+                    <h3 className="mb-3 text-base font-semibold">Score Breakdown</h3>
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                      {Object.entries(results.scoreBreakdown).map(([key, value]) => (
+                        <div key={key} className="rounded-lg border border-border/30 bg-background/30 p-3 text-center">
+                          <p className="text-xs font-medium capitalize text-muted-foreground">{key}</p>
+                          <p className={`mt-1 text-2xl font-bold tabular-nums ${scoreColor(value)}`}>{value}%</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
               <Separator />
 
               {/* Missing Keywords */}
@@ -326,15 +400,24 @@ export default function Home() {
                   Missing Keywords
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {results.missingKeywords.map((kw) => (
-                    <Badge
-                      key={kw}
-                      variant="secondary"
-                      className="border border-violet-500/30 bg-violet-500/10 text-violet-300"
-                    >
-                      {kw}
-                    </Badge>
-                  ))}
+                  {results.missingKeywords.map((kw, i) => {
+                    const colors = {
+                      high: "border-red-500/40 bg-red-500/10 text-red-300",
+                      medium: "border-amber-500/40 bg-amber-500/10 text-amber-300",
+                      low: "border-violet-500/30 bg-violet-500/10 text-violet-300",
+                    };
+                    return (
+                      <Badge
+                        key={i}
+                        variant="secondary"
+                        className={`border ${colors[kw.priority]} cursor-default`}
+                        title={kw.context}
+                      >
+                        {kw.keyword}
+                        <span className="ml-1.5 text-[10px] opacity-60">({kw.priority})</span>
+                      </Badge>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -346,18 +429,57 @@ export default function Home() {
                   Actionable Suggestions
                 </h3>
                 <ul className="space-y-3">
-                  {results.suggestions.map((s, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm">
-                      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-xs font-bold text-emerald-400">
-                        {i + 1}
-                      </span>
-                      <span className="leading-relaxed text-muted-foreground">
-                        {s}
-                      </span>
-                    </li>
-                  ))}
+                  {results.suggestions.map((s, i) => {
+                    const impactColors = {
+                      high: "bg-red-500/10 text-red-400",
+                      medium: "bg-amber-500/10 text-amber-400",
+                      low: "bg-blue-500/10 text-blue-400",
+                    };
+                    return (
+                      <li
+                        key={i}
+                        className={`flex cursor-pointer items-start gap-3 rounded-lg p-2 text-sm transition-colors ${activeSection === s.section ? "bg-violet-500/10 ring-1 ring-violet-500/30" : "hover:bg-muted/30"}`}
+                        onClick={() => setActiveSection(activeSection === s.section ? null : s.section)}
+                      >
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-xs font-bold text-emerald-400">
+                          {i + 1}
+                        </span>
+                        <div className="flex-1">
+                          <div className="mb-1 flex items-center gap-2">
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-border/40">
+                              {s.section}
+                            </Badge>
+                            <span className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${impactColors[s.impact]}`}>
+                              {s.impact} impact
+                            </span>
+                          </div>
+                          <span className="leading-relaxed text-muted-foreground">
+                            {s.suggestion}
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
+            </CardContent>
+          </Card>
+        </section>
+      )}
+
+      {/* ── PDF Viewer with Highlights ──────────────────────────── */}
+      {results && resumeFileUrl && resumePages && (
+        <section className="mx-auto mt-8 max-w-5xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <Card className="border-border/40 bg-card/60 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-xl">Resume Preview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResumeViewer
+                fileUrl={resumeFileUrl}
+                pages={resumePages}
+                highlightSection={activeSection}
+              />
             </CardContent>
           </Card>
         </section>

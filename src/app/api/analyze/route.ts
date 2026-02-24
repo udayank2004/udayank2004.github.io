@@ -97,22 +97,36 @@ export async function POST(request: Request) {
     }
 
     // ── Build the prompt ──────────────────────────────────────
-    const prompt = `You are an expert resume optimizer and ATS (Applicant Tracking System) specialist.
+    const prompt = `Analyze the following resume against the given job description.
 
-Analyze the following resume against the given job description. Evaluate how well the resume matches the job requirements.
-
-Return ONLY valid JSON (no markdown, no code fences, no extra text) in this exact format:
+Return ONLY valid JSON in this exact format:
 {
-  "score": <number from 0 to 100 representing match percentage>,
-  "missingKeywords": ["keyword1", "keyword2", ...],
-  "suggestions": ["actionable suggestion 1", "actionable suggestion 2", ...]
+  "score": <number 0-100>,
+  "scoreBreakdown": {
+    "skills": <number 0-100>,
+    "experience": <number 0-100>,
+    "education": <number 0-100>,
+    "overall": <number 0-100>
+  },
+  "missingKeywords": [
+    { "keyword": "string", "priority": "high" | "medium" | "low", "context": "why this matters for the role" }
+  ],
+  "suggestions": [
+    { "section": "Summary" | "Experience" | "Skills" | "Education" | "Projects" | "General", "suggestion": "actionable improvement", "impact": "high" | "medium" | "low" }
+  ]
 }
 
+Scoring Rubric:
+- 90-100: Near-perfect match — resume covers almost all required skills, experience level, and qualifications.
+- 70-89: Strong match — resume aligns well but has a few notable gaps.
+- 50-69: Moderate match — resume covers some requirements but is missing significant qualifications.
+- Below 50: Weak match — resume lacks most of the key requirements.
+
 Rules:
-- The score should reflect how well the resume matches the job description (skills, experience, qualifications).
-- missingKeywords should list important skills, technologies, certifications, or qualifications mentioned in the job description but absent from the resume. List 3-8 keywords.
-- suggestions should be specific, actionable improvements the candidate can make to their resume to better match this job. List 3-6 suggestions.
-- Be honest and constructive. Do not inflate the score.
+- Score honestly using the rubric above. Do not inflate.
+- missingKeywords: List 3-8 missing skills/technologies/qualifications from the JD. Assign priority based on how critical they are to the role ("high" = deal-breaker, "medium" = important, "low" = nice-to-have).
+- suggestions: List 3-6 specific, actionable improvements. Tag each with the resume section it applies to and its expected impact on match score.
+- scoreBreakdown: Rate each dimension independently.
 
 ---
 
@@ -131,7 +145,7 @@ ${resume}`;
       messages: [
         {
           role: "system",
-          content: "You are an expert resume optimizer and ATS specialist. Always respond with valid JSON only — no markdown, no code fences, no extra text.",
+          content: "You are an expert resume optimizer and ATS (Applicant Tracking System) specialist. You provide brutally honest, data-driven resume analysis. Always respond with valid JSON only.",
         },
         {
           role: "user",
@@ -143,10 +157,7 @@ ${resume}`;
     });
 
     const text = chatCompletion.choices[0]?.message?.content ?? "";
-
-    // Parse the JSON response
-    const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-    const parsed = JSON.parse(cleaned);
+    const parsed = JSON.parse(text);
 
     // Validate structure
     if (
@@ -159,6 +170,7 @@ ${resume}`;
 
     const result = {
       score: Math.round(parsed.score),
+      scoreBreakdown: parsed.scoreBreakdown || null,
       missingKeywords: parsed.missingKeywords,
       suggestions: parsed.suggestions,
     };
