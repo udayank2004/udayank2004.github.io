@@ -30,6 +30,12 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -44,6 +50,8 @@ interface Suggestion {
   section: string;
   suggestion: string;
   impact: "high" | "medium" | "low";
+  existingContent?: string;
+  enhancedContent?: string;
 }
 
 interface ScoreBreakdown {
@@ -428,7 +436,7 @@ export default function Home() {
                 <h3 className="mb-3 text-base font-semibold">
                   Actionable Suggestions
                 </h3>
-                <ul className="space-y-3">
+                <Accordion type="single" collapsible className="space-y-2">
                   {results.suggestions.map((s, i) => {
                     const impactColors = {
                       high: "bg-red-500/10 text-red-400",
@@ -436,31 +444,80 @@ export default function Home() {
                       low: "bg-blue-500/10 text-blue-400",
                     };
                     return (
-                      <li
+                      <AccordionItem
                         key={i}
-                        className={`flex cursor-pointer items-start gap-3 rounded-lg p-2 text-sm transition-colors ${activeSection === s.section ? "bg-violet-500/10 ring-1 ring-violet-500/30" : "hover:bg-muted/30"}`}
-                        onClick={() => setActiveSection(activeSection === s.section ? null : s.section)}
+                        value={`suggestion-${i}`}
+                        className="rounded-lg border border-border/30 bg-background/20 px-3"
                       >
-                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-xs font-bold text-emerald-400">
-                          {i + 1}
-                        </span>
-                        <div className="flex-1">
-                          <div className="mb-1 flex items-center gap-2">
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-border/40">
-                              {s.section}
-                            </Badge>
-                            <span className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${impactColors[s.impact]}`}>
-                              {s.impact} impact
+                        <AccordionTrigger
+                          className="py-3 hover:no-underline [&[data-state=open]]:pb-2"
+                          onClick={() => setActiveSection(activeSection === s.section ? null : s.section)}
+                        >
+                          <div className="flex items-start gap-3 text-left">
+                            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-xs font-bold text-emerald-400">
+                              {i + 1}
                             </span>
+                            <div className="flex-1">
+                              <div className="mb-1 flex items-center gap-2">
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-border/40">
+                                  {s.section}
+                                </Badge>
+                                <span className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${impactColors[s.impact]}`}>
+                                  {s.impact} impact
+                                </span>
+                              </div>
+                              <span className="text-sm leading-relaxed text-muted-foreground">
+                                {s.suggestion}
+                              </span>
+                            </div>
                           </div>
-                          <span className="leading-relaxed text-muted-foreground">
-                            {s.suggestion}
-                          </span>
-                        </div>
-                      </li>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          {s.existingContent && s.enhancedContent ? (
+                            <div className="grid grid-cols-1 gap-3 pt-2 md:grid-cols-2">
+                              {/* Before */}
+                              <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
+                                <div className="mb-2 flex items-center gap-1.5">
+                                  <span className="inline-block h-2 w-2 rounded-full bg-red-400" />
+                                  <span className="text-xs font-semibold text-red-400">Current</span>
+                                </div>
+                                <p className="text-sm leading-relaxed text-red-300/80">
+                                  {s.existingContent}
+                                </p>
+                              </div>
+                              {/* After */}
+                              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+                                <div className="mb-2 flex items-center justify-between">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+                                    <span className="text-xs font-semibold text-emerald-400">Enhanced</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="rounded px-1.5 py-0.5 text-[10px] font-medium text-emerald-400 ring-1 ring-emerald-500/30 transition-colors hover:bg-emerald-500/10"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigator.clipboard.writeText(s.enhancedContent!);
+                                    }}
+                                  >
+                                    Copy
+                                  </button>
+                                </div>
+                                <p className="text-sm leading-relaxed text-emerald-300/80">
+                                  {s.enhancedContent}
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="pt-2 text-xs text-muted-foreground italic">
+                              No before/after content available for this suggestion.
+                            </p>
+                          )}
+                        </AccordionContent>
+                      </AccordionItem>
                     );
                   })}
-                </ul>
+                </Accordion>
               </div>
             </CardContent>
           </Card>

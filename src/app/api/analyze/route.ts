@@ -112,7 +112,13 @@ Return ONLY valid JSON in this exact format:
     { "keyword": "string", "priority": "high" | "medium" | "low", "context": "why this matters for the role" }
   ],
   "suggestions": [
-    { "section": "Summary" | "Experience" | "Skills" | "Education" | "Projects" | "General", "suggestion": "actionable improvement", "impact": "high" | "medium" | "low" }
+    {
+      "section": "Summary" | "Experience" | "Skills" | "Education" | "Projects" | "General",
+      "suggestion": "brief description of the improvement",
+      "impact": "high" | "medium" | "low",
+      "existingContent": "the exact sentence or bullet point from the resume that should be improved (copy verbatim from the resume text)",
+      "enhancedContent": "the rewritten, optimized version incorporating missing keywords, power verbs, and quantified achievements"
+    }
   ]
 }
 
@@ -125,7 +131,10 @@ Scoring Rubric:
 Rules:
 - Score honestly using the rubric above. Do not inflate.
 - missingKeywords: List 3-8 missing skills/technologies/qualifications from the JD. Assign priority based on how critical they are to the role ("high" = deal-breaker, "medium" = important, "low" = nice-to-have).
-- suggestions: List 3-6 specific, actionable improvements. Tag each with the resume section it applies to and its expected impact on match score.
+- suggestions: List 3-6 specific, actionable improvements. For EACH suggestion:
+  * "existingContent" MUST be an exact quote copied from the RESUME text that needs improvement. If the suggestion is about adding new content, use the closest relevant line from the resume.
+  * "enhancedContent" MUST be a polished, rewritten version that incorporates missing keywords, uses industry-standard power verbs (e.g., "Spearheaded", "Architected", "Optimized"), and includes quantified metrics where possible.
+  * Tag each with the resume section it applies to and its expected impact on match score.
 - scoreBreakdown: Rate each dimension independently.
 
 ---

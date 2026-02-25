@@ -98,7 +98,10 @@ export async function POST(request: Request) {
                     }) => {
                         const pages = data.Pages.map((page, idx) => {
                             const textBlocks = page.Texts.map((t) => {
-                                const decoded = t.R.map((r) => decodeURIComponent(r.T)).join("");
+                                const decoded = t.R.map((r) => {
+                                    try { return decodeURIComponent(r.T); }
+                                    catch { return r.T; }
+                                }).join("");
                                 const fontSize = t.R[0]?.TS?.[1] ?? 12;
                                 return {
                                     x: t.x,

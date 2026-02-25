@@ -33,6 +33,8 @@ interface Section {
     name: string;
     yStart: number;
     yEnd: number;
+    xStart: number;
+    xEnd: number;
     pageIndex: number;
 }
 
@@ -58,58 +60,86 @@ const SECTION_KEYWORDS = [
 ];
 
 /**
- * Groups character-level text blocks into lines (by similar y),
- * finds lines that look like section headings, and returns
- * the bounding y-ranges for each section.
+ * Detects section headings by checking individual text blocks
+ * (not merged lines) against keywords, then computes tight
+ * x/y bounding boxes using only the text blocks that fall
+ * within the heading's horizontal column.
  */
 function detectSections(pages: PageData[]): Section[] {
     const sections: Section[] = [];
+    const COLUMN_TOLERANCE = 2; // form-unit tolerance for "same column"
 
     for (const page of pages) {
-        // Group text blocks into lines by rounding y to nearest 0.5
-        const lineMap = new Map<number, TextBlock[]>();
-        for (const block of page.textBlocks) {
-            const roundedY = Math.round(block.y * 2) / 2;
-            const existing = lineMap.get(roundedY) || [];
-            existing.push(block);
-            lineMap.set(roundedY, existing);
+        // Step 1: Find heading blocks — individual text blocks whose
+        //         content matches a section keyword.
+        interface HeadingHit {
+            name: string;
+            block: TextBlock;
         }
+        const headings: HeadingHit[] = [];
 
-        // Sort lines by y position
-        const sortedYs = Array.from(lineMap.keys()).sort((a, b) => a - b);
-
-        // Reconstruct line text and detect sections
-        const headings: { name: string; y: number }[] = [];
-
-        for (const y of sortedYs) {
-            const blocks = lineMap.get(y)!;
-            // Sort blocks by x position and join
-            blocks.sort((a, b) => a.x - b.x);
-            const lineText = blocks.map((b) => b.text).join("").trim().toLowerCase();
-
-            // Check if this line matches a section keyword
+        for (const block of page.textBlocks) {
+            const txt = block.text.trim().toLowerCase();
+            if (txt.length > 40) continue; // headings are short
             for (const keyword of SECTION_KEYWORDS) {
-                if (
-                    lineText.includes(keyword) &&
-                    lineText.length < 40 // Headings are usually short
-                ) {
-                    headings.push({ name: keyword, y });
+                if (txt.includes(keyword)) {
+                    headings.push({ name: keyword, block });
                     break;
                 }
             }
         }
 
-        // Build sections from consecutive headings
-        for (let i = 0; i < headings.length; i++) {
-            const yEnd =
-                i + 1 < headings.length
-                    ? headings[i + 1].y
-                    : page.height; // Last section extends to page bottom
+        // Sort headings top-to-bottom, left-to-right
+        headings.sort((a, b) => a.block.y - b.block.y || a.block.x - b.block.x);
 
+        // Step 2: For each heading, determine the vertical extent
+        //         (yEnd) and horizontal bounds by scanning all text
+        //         blocks that belong to the same column.
+        for (let i = 0; i < headings.length; i++) {
+            const h = headings[i];
+            const hX = h.block.x;
+            const hW = h.block.w || 5; // fallback width
+
+            // Find yEnd: the y of the next heading that overlaps
+            // this heading's x-range, OR page bottom.
+            let yEnd = page.height;
+            for (let j = i + 1; j < headings.length; j++) {
+                const other = headings[j];
+                // Check if "other" is in the same column
+                const overlapX =
+                    other.block.x < hX + hW + COLUMN_TOLERANCE &&
+                    other.block.x + (other.block.w || 5) > hX - COLUMN_TOLERANCE;
+                if (overlapX && other.block.y > h.block.y + 0.5) {
+                    yEnd = other.block.y;
+                    break;
+                }
+            }
+
+            // Collect all text blocks within the y-range AND
+            // overlapping the heading's x column.
+            let xMin = hX;
+            let xMax = hX + hW;
+            for (const block of page.textBlocks) {
+                if (block.y < h.block.y - 0.5 || block.y >= yEnd) continue;
+                const bRight = block.x + (block.w || 1);
+                // Is this block in the same column?
+                if (
+                    block.x < hX + hW + COLUMN_TOLERANCE * 3 &&
+                    bRight > hX - COLUMN_TOLERANCE * 3
+                ) {
+                    xMin = Math.min(xMin, block.x);
+                    xMax = Math.max(xMax, bRight);
+                }
+            }
+
+            // Add padding
+            const PAD = 0.5;
             sections.push({
-                name: headings[i].name,
-                yStart: headings[i].y,
-                yEnd,
+                name: h.name,
+                yStart: h.block.y - PAD,
+                yEnd: yEnd,
+                xStart: Math.max(0, xMin - PAD),
+                xEnd: Math.min(page.width, xMax + PAD),
                 pageIndex: page.pageIndex,
             });
         }
@@ -151,6 +181,10 @@ export default function ResumeViewer({
     // Convert pdf2json "form units" to pixel position on the rendered page
     function toPixelY(formY: number, pageData: PageData): number {
         return (formY / pageData.height) * pageWidth * (pageData.height / pageData.width);
+    }
+
+    function toPixelX(formX: number, pageData: PageData): number {
+        return (formX / pageData.width) * pageWidth;
     }
 
     function getRenderedPageHeight(pageData: PageData): number {
@@ -214,13 +248,17 @@ export default function ResumeViewer({
                                             const top = toPixelY(hl.yStart, pageData);
                                             const bottom = toPixelY(hl.yEnd, pageData);
                                             const height = bottom - top;
+                                            const left = toPixelX(hl.xStart, pageData);
+                                            const width = toPixelX(hl.xEnd, pageData) - left;
 
                                             return (
                                                 <div
                                                     key={idx}
-                                                    className="absolute left-0 right-0 transition-all duration-300 animate-pulse"
+                                                    className="absolute transition-all duration-300 animate-pulse"
                                                     style={{
                                                         top,
+                                                        left,
+                                                        width,
                                                         height,
                                                         backgroundColor: "rgba(139, 92, 246, 0.25)",
                                                         border: "3px solid rgba(139, 92, 246, 0.8)",
