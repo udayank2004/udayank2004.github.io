@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -18,20 +18,20 @@ interface TextBlock {
     x: number;
     y: number;
     w: number;
+    h: number;
     text: string;
     fontSize: number;
 }
 
 interface PageData {
     pageIndex: number;
-    width: number;
-    height: number;
+    width: number;   // in PDF points (72pt = 1 inch)
+    height: number;  // in PDF points
     textBlocks: TextBlock[];
 }
 
-interface Section {
-    name: string;
-    yStart: number;
+interface HighlightRect {
+    yStart: number;  // PDF points
     yEnd: number;
     xStart: number;
     xEnd: number;
@@ -41,118 +41,171 @@ interface Section {
 interface ResumeViewerProps {
     fileUrl: string;
     pages: PageData[];
-    highlightSection: string | null;
+    highlightText: string | null;
 }
 
 /* ------------------------------------------------------------------ */
-/*  Section detection                                                  */
+/*  Merge nearby text blocks on the same line into phrases             */
 /* ------------------------------------------------------------------ */
-const SECTION_KEYWORDS = [
-    "education",
-    "experience",
-    "skills",
-    "projects",
-    "certifications",
-    "summary",
-    "objective",
-    "achievements",
-    "general",
-];
+interface MergedBlock {
+    text: string;
+    x: number;
+    y: number;
+    xEnd: number;
+    yEnd: number;
+    pageIndex: number;
+}
 
-/**
- * Detects section headings by checking individual text blocks
- * (not merged lines) against keywords, then computes tight
- * x/y bounding boxes using only the text blocks that fall
- * within the heading's horizontal column.
- */
-function detectSections(pages: PageData[]): Section[] {
-    const sections: Section[] = [];
-    const COLUMN_TOLERANCE = 2; // form-unit tolerance for "same column"
+function mergeBlocksForPage(
+    blocks: TextBlock[],
+    pageIndex: number
+): MergedBlock[] {
+    if (blocks.length === 0) return [];
+
+    const Y_TOLERANCE = 2.5;  // Adjust for line height variations
+    const X_GAP = 12;        // Points gap before we consider it a new word/phrase
+
+    const sorted = [...blocks].sort((a, b) => a.y - b.y || a.x - b.x);
+
+    const merged: MergedBlock[] = [];
+    let cur: MergedBlock = {
+        text: sorted[0].text,
+        x: sorted[0].x,
+        y: sorted[0].y,
+        xEnd: sorted[0].x + sorted[0].w,
+        yEnd: sorted[0].y + sorted[0].h,
+        pageIndex,
+    };
+
+    for (let i = 1; i < sorted.length; i++) {
+        const b = sorted[i];
+        const sameLine = Math.abs(b.y - cur.y) < Y_TOLERANCE;
+        const closeEnough = b.x - cur.xEnd < X_GAP;
+
+        if (sameLine && closeEnough) {
+            // Add space helper for non-contiguous characters
+            if (b.x - cur.xEnd > 1.5) cur.text += " ";
+            cur.text += b.text;
+            cur.xEnd = Math.max(cur.xEnd, b.x + b.w);
+            cur.yEnd = Math.max(cur.yEnd, b.y + b.h);
+        } else {
+            merged.push(cur);
+            cur = {
+                text: b.text,
+                x: b.x,
+                y: b.y,
+                xEnd: b.x + b.w,
+                yEnd: b.y + b.h,
+                pageIndex,
+            };
+        }
+    }
+    merged.push(cur);
+    return merged;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Normalize text for fuzzy comparison                                 */
+/* ------------------------------------------------------------------ */
+function normalize(s: string): string {
+    return s
+        .replace(/\s+/g, " ")
+        .replace(/[^\w\s.,;:!?/()\-@]/g, "") // Added @ for emails
+        .trim()
+        .toLowerCase();
+}
+
+/* ------------------------------------------------------------------ */
+/*  Find highlight rectangles by matching existingContent text          */
+/* ------------------------------------------------------------------ */
+function findTextHighlights(
+    pages: PageData[],
+    searchText: string
+): HighlightRect[] {
+    if (!searchText || searchText.trim().length === 0) return [];
+
+    const highlights: HighlightRect[] = [];
+    const searchNorm = normalize(searchText);
+
+    // Filter out very short or generic lines to avoid false positives
+    const searchLines = searchText
+        .split(/\n/)
+        .map((l) => normalize(l))
+        .filter((l) => l.length > 2);
+
+    if (searchLines.length === 0 && searchNorm.length > 2) {
+        searchLines.push(searchNorm);
+    }
 
     for (const page of pages) {
-        // Step 1: Find heading blocks — individual text blocks whose
-        //         content matches a section keyword.
-        interface HeadingHit {
-            name: string;
-            block: TextBlock;
-        }
-        const headings: HeadingHit[] = [];
+        const mergedBlocks = mergeBlocksForPage(page.textBlocks, page.pageIndex);
 
-        for (const block of page.textBlocks) {
-            const txt = block.text.trim().toLowerCase();
-            if (txt.length > 40) continue; // headings are short
-            for (const keyword of SECTION_KEYWORDS) {
-                if (txt.includes(keyword)) {
-                    headings.push({ name: keyword, block });
-                    break;
-                }
-            }
-        }
+        for (const searchLine of searchLines) {
+            for (const mb of mergedBlocks) {
+                const blockNorm = normalize(mb.text);
 
-        // Sort headings top-to-bottom, left-to-right
-        headings.sort((a, b) => a.block.y - b.block.y || a.block.x - b.block.x);
-
-        // Step 2: For each heading, determine the vertical extent
-        //         (yEnd) and horizontal bounds by scanning all text
-        //         blocks that belong to the same column.
-        for (let i = 0; i < headings.length; i++) {
-            const h = headings[i];
-            const hX = h.block.x;
-            const hW = h.block.w || 5; // fallback width
-
-            // Find yEnd: the y of the next heading that overlaps
-            // this heading's x-range, OR page bottom.
-            let yEnd = page.height;
-            for (let j = i + 1; j < headings.length; j++) {
-                const other = headings[j];
-                // Check if "other" is in the same column
-                const overlapX =
-                    other.block.x < hX + hW + COLUMN_TOLERANCE &&
-                    other.block.x + (other.block.w || 5) > hX - COLUMN_TOLERANCE;
-                if (overlapX && other.block.y > h.block.y + 0.5) {
-                    yEnd = other.block.y;
-                    break;
-                }
-            }
-
-            // Collect all text blocks within the y-range AND
-            // overlapping the heading's x column.
-            let xMin = hX;
-            let xMax = hX + hW;
-            for (const block of page.textBlocks) {
-                if (block.y < h.block.y - 0.5 || block.y >= yEnd) continue;
-                const bRight = block.x + (block.w || 1);
-                // Is this block in the same column?
+                // Check if this merged block contains the search line or vice versa
                 if (
-                    block.x < hX + hW + COLUMN_TOLERANCE * 3 &&
-                    bRight > hX - COLUMN_TOLERANCE * 3
+                    blockNorm.includes(searchLine) ||
+                    searchLine.includes(blockNorm)
                 ) {
-                    xMin = Math.min(xMin, block.x);
-                    xMax = Math.max(xMax, bRight);
+                    const shorter = Math.min(blockNorm.length, searchLine.length);
+                    const longer = Math.max(blockNorm.length, searchLine.length);
+
+                    // Match quality check (> 40% intersection for headers, > 60% for long text)
+                    const threshold = longer < 15 ? 0.4 : 0.6;
+
+                    if (shorter / longer >= threshold) {
+                        const PAD_Y = 1.0;
+                        const PAD_X = 1.5;
+                        highlights.push({
+                            yStart: mb.y - PAD_Y,
+                            yEnd: mb.yEnd + PAD_Y,
+                            xStart: Math.max(0, mb.x - PAD_X),
+                            xEnd: Math.min(page.width, mb.xEnd + PAD_X),
+                            pageIndex: page.pageIndex,
+                        });
+                    }
                 }
             }
-
-            // Add padding
-            const PAD = 0.5;
-            sections.push({
-                name: h.name,
-                yStart: h.block.y - PAD,
-                yEnd: yEnd,
-                xStart: Math.max(0, xMin - PAD),
-                xEnd: Math.min(page.width, xMax + PAD),
-                pageIndex: page.pageIndex,
-            });
         }
     }
 
-    return sections;
+    return mergeHighlightRects(highlights);
 }
 
 /* ------------------------------------------------------------------ */
-/*  Highlight colors                                                   */
+/*  Merge overlapping/adjacent rects into fewer boxes                   */
 /* ------------------------------------------------------------------ */
-const HIGHLIGHT_COLOR = "rgba(139, 92, 246, 0.15)"; // violet
-const HIGHLIGHT_BORDER = "rgba(139, 92, 246, 0.6)";
+function mergeHighlightRects(rects: HighlightRect[]): HighlightRect[] {
+    if (rects.length <= 1) return rects;
+
+    const sorted = [...rects].sort(
+        (a, b) => a.pageIndex - b.pageIndex || a.yStart - b.yStart
+    );
+
+    const merged: HighlightRect[] = [{ ...sorted[0] }];
+
+    for (let i = 1; i < sorted.length; i++) {
+        const prev = merged[merged.length - 1];
+        const curr = sorted[i];
+
+        // Merge if same page, vertically close, AND horizontally overlapping or near
+        const samePage = curr.pageIndex === prev.pageIndex;
+        const vertClose = curr.yStart <= prev.yEnd + 1.5; // Tighter vertical gap
+        const horizOverlap = !(curr.xEnd < prev.xStart - 10 || curr.xStart > prev.xEnd + 10);
+
+        if (samePage && vertClose && horizOverlap) {
+            prev.yEnd = Math.max(prev.yEnd, curr.yEnd);
+            prev.xStart = Math.min(prev.xStart, curr.xStart);
+            prev.xEnd = Math.max(prev.xEnd, curr.xEnd);
+        } else {
+            merged.push({ ...curr });
+        }
+    }
+
+    return merged;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
@@ -160,77 +213,97 @@ const HIGHLIGHT_BORDER = "rgba(139, 92, 246, 0.6)";
 export default function ResumeViewer({
     fileUrl,
     pages,
-    highlightSection,
+    highlightText,
 }: ResumeViewerProps) {
     const [numPages, setNumPages] = useState<number>(0);
     const [pageWidth, setPageWidth] = useState(600);
+    const containerRef = useRef<HTMLDivElement>(null);
 
-    const sections = useMemo(() => detectSections(pages), [pages]);
+    // Measure the container
+    useEffect(() => {
+        if (!containerRef.current) return;
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const w = Math.floor(entry.contentRect.width);
+                if (w > 0) setPageWidth(w);
+            }
+        });
+        observer.observe(containerRef.current);
+        const currentW = Math.floor(containerRef.current.getBoundingClientRect().width);
+        if (currentW > 0) setPageWidth(currentW);
 
-    // Find the section(s) matching the highlight
-    const activeHighlights = useMemo(() => {
-        if (!highlightSection) return [];
-        const normalized = highlightSection.toLowerCase();
-        return sections.filter((s) => s.name === normalized);
-    }, [sections, highlightSection]);
+        return () => observer.disconnect();
+    }, []);
+
+    // Find exact text matches
+    const activeHighlights = useMemo(
+        () => findTextHighlights(pages, highlightText ?? ""),
+        [pages, highlightText]
+    );
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         setNumPages(numPages);
     }
 
-    // Convert pdf2json "form units" to pixel position on the rendered page
-    function toPixelY(formY: number, pageData: PageData): number {
-        return (formY / pageData.height) * pageWidth * (pageData.height / pageData.width);
-    }
-
-    function toPixelX(formX: number, pageData: PageData): number {
-        return (formX / pageData.width) * pageWidth;
+    // PDF pts to Pixels scale
+    function toPixel(pdfPt: number, pageData: PageData): number {
+        return pdfPt * (pageWidth / pageData.width);
     }
 
     function getRenderedPageHeight(pageData: PageData): number {
-        return pageWidth * (pageData.height / pageData.width);
+        return pageData.height * (pageWidth / pageData.width);
     }
 
     return (
-        <div className="flex flex-col items-center gap-4">
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                {highlightSection ? (
-                    <span className="flex items-center gap-2">
+        <div ref={containerRef} className="flex w-full flex-col items-center gap-4">
+            <style jsx global>{`
+                .react-pdf__Page__canvas {
+                    display: block !important;
+                    margin: 0 auto !important;
+                    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+                }
+                .react-pdf__Page {
+                    background-color: white !important;
+                }
+            `}</style>
+
+            <div className="flex items-center gap-3 text-sm text-muted-foreground transition-opacity duration-300">
+                {highlightText ? (
+                    <span className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
                         <span className="inline-block h-3 w-3 rounded-sm border border-violet-500/60 bg-violet-500/20" />
-                        Highlighting: <strong className="text-violet-400 capitalize">{highlightSection}</strong>
+                        Highlighting matched content
                     </span>
                 ) : (
-                    <span>Click a suggestion to highlight its section on the resume</span>
+                    <span className="opacity-70">Click a suggestion to highlight on the resume</span>
                 )}
             </div>
 
-            <div
-                className="relative overflow-auto rounded-lg border border-border/40 bg-white shadow-lg"
-                style={{ maxHeight: "70vh" }}
-            >
+            <div className="relative w-full overflow-hidden rounded-xl border border-border/40 bg-white shadow-2xl">
                 <Document
                     file={fileUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
                     loading={
-                        <div className="flex h-[400px] w-[600px] items-center justify-center">
-                            <svg className="h-8 w-8 animate-spin text-violet-400" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                            </svg>
+                        <div className="flex h-[400px] w-full items-center justify-center">
+                            <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-400 border-t-transparent" />
                         </div>
                     }
                 >
                     {Array.from({ length: numPages }, (_, i) => {
                         const pageData = pages[i];
-                        const renderedH = pageData ? getRenderedPageHeight(pageData) : 0;
+                        const renderedH = pageData
+                            ? getRenderedPageHeight(pageData)
+                            : 0;
 
-                        // Find highlights for this page
                         const pageHighlights = activeHighlights.filter(
                             (h) => h.pageIndex === i
                         );
 
                         return (
-                            <div key={i} className="relative" style={{ marginBottom: 8 }}>
+                            <div
+                                key={i}
+                                className="relative flex justify-center bg-muted/5 last:mb-0"
+                                style={{ marginBottom: 16 }}
+                            >
                                 <Page
                                     pageNumber={i + 1}
                                     width={pageWidth}
@@ -238,18 +311,21 @@ export default function ResumeViewer({
                                     renderAnnotationLayer={false}
                                 />
 
-                                {/* Overlay layer for highlights */}
                                 {pageData && pageHighlights.length > 0 && (
                                     <div
-                                        className="pointer-events-none absolute inset-0"
-                                        style={{ width: pageWidth, height: renderedH }}
+                                        className="pointer-events-none absolute"
+                                        style={{
+                                            top: 0,
+                                            left: 0,
+                                            width: pageWidth,
+                                            height: renderedH,
+                                        }}
                                     >
                                         {pageHighlights.map((hl, idx) => {
-                                            const top = toPixelY(hl.yStart, pageData);
-                                            const bottom = toPixelY(hl.yEnd, pageData);
-                                            const height = bottom - top;
-                                            const left = toPixelX(hl.xStart, pageData);
-                                            const width = toPixelX(hl.xEnd, pageData) - left;
+                                            const top = toPixel(hl.yStart, pageData);
+                                            const height = toPixel(hl.yEnd - hl.yStart, pageData);
+                                            const left = toPixel(hl.xStart, pageData);
+                                            const width = toPixel(hl.xEnd - hl.xStart, pageData);
 
                                             return (
                                                 <div
@@ -260,10 +336,10 @@ export default function ResumeViewer({
                                                         left,
                                                         width,
                                                         height,
-                                                        backgroundColor: "rgba(139, 92, 246, 0.25)",
-                                                        border: "3px solid rgba(139, 92, 246, 0.8)",
-                                                        borderRadius: 6,
-                                                        boxShadow: "0 0 12px rgba(139, 92, 246, 0.4)",
+                                                        backgroundColor: "rgba(139, 92, 246, 0.22)",
+                                                        border: "2px solid rgba(139, 92, 246, 0.7)",
+                                                        borderRadius: 4,
+                                                        boxShadow: "0 0 8px rgba(139, 92, 246, 0.3)",
                                                     }}
                                                 />
                                             );
@@ -275,24 +351,6 @@ export default function ResumeViewer({
                     })}
                 </Document>
             </div>
-
-            {numPages > 0 && (
-                <div className="flex items-center gap-4">
-                    <label className="text-xs text-muted-foreground">Zoom:</label>
-                    <input
-                        type="range"
-                        min={300}
-                        max={900}
-                        step={50}
-                        value={pageWidth}
-                        onChange={(e) => setPageWidth(Number(e.target.value))}
-                        className="w-32 accent-violet-500"
-                    />
-                    <span className="text-xs tabular-nums text-muted-foreground">
-                        {Math.round((pageWidth / 600) * 100)}%
-                    </span>
-                </div>
-            )}
         </div>
     );
 }

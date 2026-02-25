@@ -30,12 +30,7 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -72,6 +67,7 @@ interface TextBlock {
   x: number;
   y: number;
   w: number;
+  h: number;
   text: string;
   fontSize: number;
 }
@@ -113,6 +109,8 @@ export default function Home() {
   const [resumePages, setResumePages] = useState<PageData[] | null>(null);
   const [resumeFileUrl, setResumeFileUrl] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [selectedSuggestion, setSelectedSuggestion] = useState<Suggestion | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const resumeFileRef = useRef<HTMLInputElement>(null);
 
@@ -181,6 +179,7 @@ export default function Home() {
     setResumePages(null);
     setResumeFileUrl(null);
     setActiveSection(null);
+    setSelectedSuggestion(null);
     setResults(null);
     setError(null);
     setIsLoading(false);
@@ -431,12 +430,13 @@ export default function Home() {
 
               <Separator />
 
-              {/* Suggestions */}
+              {/* Suggestions — clickable cards */}
               <div>
                 <h3 className="mb-3 text-base font-semibold">
                   Actionable Suggestions
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">Click to view details</span>
                 </h3>
-                <Accordion type="single" collapsible className="space-y-2">
+                <ul className="space-y-2">
                   {results.suggestions.map((s, i) => {
                     const impactColors = {
                       high: "bg-red-500/10 text-red-400",
@@ -444,103 +444,148 @@ export default function Home() {
                       low: "bg-blue-500/10 text-blue-400",
                     };
                     return (
-                      <AccordionItem
+                      <li
                         key={i}
-                        value={`suggestion-${i}`}
-                        className="rounded-lg border border-border/30 bg-background/20 px-3"
+                        className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/30 bg-background/20 p-3 text-sm transition-all hover:border-violet-500/40 hover:bg-violet-500/5"
+                        onClick={() => {
+                          setSelectedSuggestion(s);
+                          setActiveSection(s.section);
+                        }}
                       >
-                        <AccordionTrigger
-                          className="py-3 hover:no-underline [&[data-state=open]]:pb-2"
-                          onClick={() => setActiveSection(activeSection === s.section ? null : s.section)}
-                        >
-                          <div className="flex items-start gap-3 text-left">
-                            <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-xs font-bold text-emerald-400">
-                              {i + 1}
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-xs font-bold text-emerald-400">
+                          {i + 1}
+                        </span>
+                        <div className="flex-1">
+                          <div className="mb-1 flex items-center gap-2">
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-border/40">
+                              {s.section}
+                            </Badge>
+                            <span className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${impactColors[s.impact]}`}>
+                              {s.impact} impact
                             </span>
-                            <div className="flex-1">
-                              <div className="mb-1 flex items-center gap-2">
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-border/40">
-                                  {s.section}
-                                </Badge>
-                                <span className={`inline-flex items-center rounded-full px-1.5 py-0 text-[10px] font-medium ${impactColors[s.impact]}`}>
-                                  {s.impact} impact
-                                </span>
-                              </div>
-                              <span className="text-sm leading-relaxed text-muted-foreground">
-                                {s.suggestion}
-                              </span>
-                            </div>
                           </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          {s.existingContent && s.enhancedContent ? (
-                            <div className="grid grid-cols-1 gap-3 pt-2 md:grid-cols-2">
-                              {/* Before */}
-                              <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3">
-                                <div className="mb-2 flex items-center gap-1.5">
-                                  <span className="inline-block h-2 w-2 rounded-full bg-red-400" />
-                                  <span className="text-xs font-semibold text-red-400">Current</span>
-                                </div>
-                                <p className="text-sm leading-relaxed text-red-300/80">
-                                  {s.existingContent}
-                                </p>
-                              </div>
-                              {/* After */}
-                              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
-                                <div className="mb-2 flex items-center justify-between">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
-                                    <span className="text-xs font-semibold text-emerald-400">Enhanced</span>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    className="rounded px-1.5 py-0.5 text-[10px] font-medium text-emerald-400 ring-1 ring-emerald-500/30 transition-colors hover:bg-emerald-500/10"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigator.clipboard.writeText(s.enhancedContent!);
-                                    }}
-                                  >
-                                    Copy
-                                  </button>
-                                </div>
-                                <p className="text-sm leading-relaxed text-emerald-300/80">
-                                  {s.enhancedContent}
-                                </p>
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="pt-2 text-xs text-muted-foreground italic">
-                              No before/after content available for this suggestion.
-                            </p>
-                          )}
-                        </AccordionContent>
-                      </AccordionItem>
+                          <span className="leading-relaxed text-muted-foreground">
+                            {s.suggestion}
+                          </span>
+                        </div>
+                        <svg className="mt-1 h-4 w-4 shrink-0 text-muted-foreground/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </li>
                     );
                   })}
-                </Accordion>
+                </ul>
               </div>
             </CardContent>
           </Card>
         </section>
       )}
 
-      {/* ── PDF Viewer with Highlights ──────────────────────────── */}
-      {results && resumeFileUrl && resumePages && (
-        <section className="mx-auto mt-8 max-w-5xl animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <Card className="border-border/40 bg-card/60 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-xl">Resume Preview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResumeViewer
-                fileUrl={resumeFileUrl}
-                pages={resumePages}
-                highlightSection={activeSection}
-              />
-            </CardContent>
-          </Card>
-        </section>
-      )}
+      {/* ── Optimization Workspace Dialog ───────────────────────── */}
+      <Dialog
+        open={!!selectedSuggestion}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedSuggestion(null);
+            setActiveSection(null);
+          }
+        }}
+      >
+        <DialogContent className="h-[95vh] w-[70vw] max-w-none overflow-hidden border-border/40 bg-[#0a0a0f] p-0">
+          <DialogHeader className="border-b border-border/30 px-6 py-4">
+            <DialogTitle className="flex items-center gap-3 text-lg font-semibold">
+              <span>Optimization Workspace</span>
+              {selectedSuggestion && (
+                <Badge variant="outline" className="text-xs px-2 py-0.5 border-violet-500/40 text-violet-400">
+                  {selectedSuggestion.section}
+                </Badge>
+              )}
+            </DialogTitle>
+            <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100" />
+          </DialogHeader>
+
+          {selectedSuggestion && (
+            <div className="grid h-[calc(95vh-64px)] grid-cols-1 md:grid-cols-2">
+              {/* Left — PDF Viewer */}
+              <div className="h-full overflow-y-scroll border-r border-border/20 bg-white/5 p-4">
+                {resumeFileUrl && resumePages ? (
+                  <ResumeViewer
+                    fileUrl={resumeFileUrl}
+                    pages={resumePages}
+                    highlightText={selectedSuggestion?.existingContent ?? null}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                    No PDF available for preview.
+                  </div>
+                )}
+              </div>
+
+              {/* Right — Before / After */}
+              <div className="flex flex-col overflow-y-auto">
+                {/* Suggestion Description */}
+                <div className="border-b border-border/20 px-5 py-4">
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {selectedSuggestion.suggestion}
+                  </p>
+                </div>
+
+                {selectedSuggestion.existingContent && selectedSuggestion.enhancedContent ? (
+                  <>
+                    {/* Current */}
+                    <div className="flex-1 border-b border-border/20 px-5 py-4">
+                      <div className="mb-3 flex items-center gap-2">
+                        <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-400" />
+                        <span className="text-sm font-semibold text-red-400">Current Content</span>
+                      </div>
+                      <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4">
+                        <p className="text-sm leading-relaxed text-red-300/80">
+                          {selectedSuggestion.existingContent}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Enhanced */}
+                    <div className="flex-1 px-5 py-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                          <span className="text-sm font-semibold text-emerald-400">Enhanced Content</span>
+                        </div>
+                        <button
+                          type="button"
+                          className={`rounded-md px-3 py-1 text-xs font-medium ring-1 transition-colors ${copied
+                            ? "bg-emerald-500/20 text-emerald-300 ring-emerald-400/50"
+                            : "text-emerald-400 ring-emerald-500/30 hover:bg-emerald-500/10"
+                            }`}
+                          onClick={() => {
+                            navigator.clipboard.writeText(selectedSuggestion.enhancedContent!);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }}
+                        >
+                          {copied ? "✓ Copied!" : "📋 Copy"}
+                        </button>
+                      </div>
+                      <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
+                        <p className="text-sm leading-relaxed text-emerald-300/80">
+                          {selectedSuggestion.enhancedContent}
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-1 items-center justify-center p-6">
+                    <p className="text-sm text-muted-foreground italic">
+                      No before/after content available for this suggestion.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ── Extracted Data Dialog ───────────────────────────────── */}
       <Dialog open={showExtractedData} onOpenChange={setShowExtractedData}>

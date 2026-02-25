@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { pathToFileURL } from "url";
 
 /* ------------------------------------------------------------------ */
 /*  POST /api/parse-file                                               */
@@ -63,83 +64,106 @@ export async function POST(request: Request) {
         const buffer = Buffer.from(arrayBuffer);
         let text = "";
 
-        /* ----- PDF (pdf2json — with spatial data) -------------------- */
+        /* ----- PDF (pdfjs-dist — accurate spatial data) ---------------- */
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let pdfPages: any[] | null = null;
 
         if (name.endsWith(".pdf")) {
             try {
                 // eslint-disable-next-line @typescript-eslint/no-require-imports
-                const PDFParser = require("pdf2json");
+                const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.mjs");
 
-                const pdfData = await new Promise<{
-                    text: string; pages: Array<{
-                        pageIndex: number;
-                        width: number;
-                        height: number;
-                        textBlocks: Array<{ x: number; y: number; w: number; text: string; fontSize: number }>;
-                    }>
-                }>((resolve, reject) => {
-                    const pdfParser = new PDFParser(null, true); // null = no owner password, true = raw text mode
+                // Explicitly set the worker source path as a file:// URL to avoid resolution errors on Windows
+                const workerPath = path.join(
+                    process.cwd(),
+                    "node_modules",
+                    "pdfjs-dist",
+                    "legacy",
+                    "build",
+                    "pdf.worker.mjs"
+                );
+                pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).toString();
 
-                    pdfParser.on("pdfParser_dataReady", (data: {
-                        Pages: Array<{
-                            Width: number;
-                            Height: number;
-                            Texts: Array<{
-                                x: number;
-                                y: number;
-                                w: number;
-                                sw: number;
-                                clr: number;
-                                R: Array<{ T: string; TS: number[] }>;
-                            }>;
-                        }>;
-                    }) => {
-                        const pages = data.Pages.map((page, idx) => {
-                            const textBlocks = page.Texts.map((t) => {
-                                const decoded = t.R.map((r) => {
-                                    try { return decodeURIComponent(r.T); }
-                                    catch { return r.T; }
-                                }).join("");
-                                const fontSize = t.R[0]?.TS?.[1] ?? 12;
-                                return {
-                                    x: t.x,
-                                    y: t.y,
-                                    w: t.w,
-                                    text: decoded,
-                                    fontSize,
-                                };
-                            });
+                // Disable worker for server-side parsing to avoid path resolution issues
+                const loadingTask = pdfjsLib.getDocument({
+                    data: new Uint8Array(buffer),
+                    disableWorker: true,
+                    verbosity: 0,
+                    // Some PDFs require standard font data to extract text correctly
+                    standardFontDataUrl: pathToFileURL(path.join(
+                        process.cwd(),
+                        "node_modules",
+                        "pdfjs-dist",
+                        "standard_fonts"
+                    )).toString() + "/",
+                });
+                const pdf = await loadingTask.promise;
+                const numPages = pdf.numPages;
+
+                const pages: Array<{
+                    pageIndex: number;
+                    width: number;
+                    height: number;
+                    textBlocks: Array<{
+                        x: number;
+                        y: number;
+                        w: number;
+                        h: number;
+                        text: string;
+                        fontSize: number;
+                    }>;
+                }> = [];
+
+                for (let i = 1; i <= numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: 1.0 });
+                    const textContent = await page.getTextContent();
+
+                    const textBlocks = textContent.items
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        .filter((item: any) => item.str && item.str.trim().length > 0)
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        .map((item: any) => {
+                            // item.transform = [scaleX, skewY, skewX, scaleY, translateX, translateY]
+                            const tx = item.transform[4]; // X in PDF coords (bottom-left origin)
+                            const ty = item.transform[5]; // Y in PDF coords (bottom-left origin, baseline)
+                            const fontSize = Math.abs(item.transform[3]); // scaleY ≈ fontSize
+                            const itemH = item.height || fontSize;
+
+                            // Convert from PDF coordinate system (bottom-left, baseline)
+                            // to top-left origin for rendering.
+                            // ty is the BASELINE of the text.
+                            // To get the TOP of the text line, we go up by fontSize (ascenders).
+                            const x = tx;
+                            const y = viewport.height - ty - fontSize;
+
                             return {
-                                pageIndex: idx,
-                                width: page.Width,
-                                height: page.Height,
-                                textBlocks,
+                                x,
+                                y,
+                                w: item.width || 0,
+                                h: itemH,
+                                text: item.str,
+                                fontSize,
                             };
                         });
 
-                        // Build flat text from all pages
-                        const flatText = pages
-                            .map((p) => p.textBlocks.map((b: { text: string }) => b.text).join(" "))
-                            .join("\n");
-
-                        resolve({ text: flatText, pages });
+                    pages.push({
+                        pageIndex: i - 1,
+                        width: viewport.width,
+                        height: viewport.height,
+                        textBlocks,
                     });
+                }
 
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    pdfParser.on("pdfParser_dataError", (err: any) => {
-                        reject(new Error(err?.parserError?.message || String(err)));
-                    });
+                // Build flat text from all pages
+                text = pages
+                    .map((p) => p.textBlocks.map((b) => b.text).join(" "))
+                    .join("\n");
 
-                    pdfParser.parseBuffer(buffer);
-                });
-
-                text = pdfData.text;
-                pdfPages = pdfData.pages;
+                pdfPages = pages;
             } catch (pdfErr: unknown) {
                 const msg = pdfErr instanceof Error ? pdfErr.message : String(pdfErr);
-                log("error", "pdf2json failed", { filename: file.name, error: msg });
+                log("error", "pdfjs-dist failed", { filename: file.name, error: msg });
 
                 if (msg.toLowerCase().includes("password")) {
                     return NextResponse.json(
@@ -255,4 +279,3 @@ export async function POST(request: Request) {
         );
     }
 }
-
