@@ -133,15 +133,14 @@ export async function POST(request: Request) {
                             // Convert from PDF coordinate system (bottom-left, baseline)
                             // to top-left origin for rendering.
                             // ty is the BASELINE of the text.
-                            // To get the TOP of the text line, we go up by fontSize (ascenders).
                             const x = tx;
-                            const y = viewport.height - ty - fontSize;
+                            const y = viewport.height - ty - fontSize + 8;
 
                             return {
                                 x,
                                 y,
                                 w: item.width || 0,
-                                h: itemH,
+                                h: itemH + 4,
                                 text: item.str,
                                 fontSize,
                             };

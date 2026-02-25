@@ -1,0 +1,796 @@
+{
+  "text": "S R I D H A R S H I N I K +91 9994603436 dharshinikittusamy@gmail.com E D U C A T I O N S K I L L S Programming Languages : Java,Python Web Development : HTML,CSS,JavaScript Database Management : SQL(Learning) Tools : Visual Studio Code Soft Skills : Teamwork, Adaptability, Leadership L A N G U A G E S S U M M A R Y I N T E R E N S H I P Webdevelopment Intern | CodSoft | Feb 2024 - March 2024 Developed and deployed four responsive web projects using HTML, CSS, and JavaScript. Key projects : Portfolio Website, Calculator, Landing Page, and Tic-Tac-Toe Game. AndEnhanced problem- solving and time management skills. I am a motivated and passionate individual aiming to build a successful career as a Web Developer and Programmer. I am keen to participate in innovative projects and further develop my skills in both front-end and back-end development. I am passionate about being part of a dynamic environment that nurtures creativity, teamwork, and ongoing professional advancement. 🎓 B.E. in Electrical and Electronics Engineering Karpagam Institute of Technology, Coimbatore CGPA : 7.97 Graduation Year: 2026 🎓 Mariammal Girls Higherr Secondary School HSC 2022 Percentage: 88% SSLC 2020 Percentage: 84% English Tamil : Native Speaker Hindustan Electrical Limited | Transformer Company | Dec 204 - Jan 2025 Worked on the design, testing, and manufacturing of transformers.Participated in quality control and assembly inspections. P R O J E C T S C E R T I F I C A T I O N S CSS Fundamentals Python3 IoT PCB Responsive Web Design - free Code camp Smart Yoga Mat Smart Yoga Mat that utilizes a camera to capture the user's posture during yoga sessions. The system compares the captured images with pre-fed asana images to detect incorrect postures. It provides real-time feedback to users via a mobile app and tracks progress. | Status : UI/UX Design completed, Building mat prototype Smart E- Foodtruck Responsive Webpages IoT based Home Automation A D D I T I O N A L Workshops Attended : Web Development Workshop - Aadi Foundation, Harness in Wiring Workshop, E-Vehicle Active participant in Hackathons, Coding Contests and Paper Presentation linkedin.com/in/sri-dharshini-322580258 https://github.com/Sridharshinikittusamy E-Commerce Website | Currently working Currently developing a real-time E-Commerce website for a Oxyen plant &nurssery using HTML,CSS,JavaScript and Boostrap",
+  "pages": [
+    {
+      "pageIndex": 0,
+      "width": 595.5,
+      "height": 842.2499787,
+      "textBlocks": [
+        {
+          "x": 99.41667500763836,
+          "y": 43.98096327454394,
+          "w": 292.28979657125797,
+          "h": 33.99999875,
+          "text": "S R I D H A R S H I N I",
+          "fontSize": 29.99999875
+        },
+        {
+          "x": 411.5964475001474,
+          "y": 43.98096327454394,
+          "w": 21.35999911,
+          "h": 33.99999875,
+          "text": "K",
+          "fontSize": 29.99999875
+        },
+        {
+          "x": 51.1537562685934,
+          "y": 106.44549674685493,
+          "w": 77.93010758441201,
+          "h": 13.997499508437503,
+          "text": "+91 9994603436",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 150.4036305331818,
+          "y": 107.9838318077576,
+          "w": 121.98227529240505,
+          "h": 12.999999625,
+          "text": "dharshinikittusamy@gmail.com",
+          "fontSize": 8.999999625
+        },
+        {
+          "x": 52.085508229770404,
+          "y": 230.85982828792413,
+          "w": 92.1361303359944,
+          "h": 15.9999995,
+          "text": "E D U C A T I O N",
+          "fontSize": 11.9999995
+        },
+        {
+          "x": 52.085508229770404,
+          "y": 341.8154548647729,
+          "w": 54.036074698496805,
+          "h": 15.9999995,
+          "text": "S K I L L S",
+          "fontSize": 11.9999995
+        },
+        {
+          "x": 63.4822244049072,
+          "y": 360.49045423664785,
+          "w": 185.04734978099359,
+          "h": 14.994999391875005,
+          "text": "Programming Languages : Java,Python",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 63.4822244049072,
+          "y": 380.74045339289785,
+          "w": 204.26631448512822,
+          "h": 14.994999391875005,
+          "text": "Web Development : HTML,CSS,JavaScript",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 63.4822244049072,
+          "y": 400.99045254914785,
+          "w": 188.11326187189707,
+          "h": 14.994999391875005,
+          "text": "Database Management : SQL(Learning)",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 63.4822244049072,
+          "y": 421.24045170539785,
+          "w": 125.93201812363239,
+          "h": 14.994999391875005,
+          "text": "Tools : Visual Studio Code",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 63.4822244049072,
+          "y": 441.4904508616479,
+          "w": 228.00430201574548,
+          "h": 14.994999391875005,
+          "text": "Soft Skills : Teamwork, Adaptability, Leadership",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 456.163300993195,
+          "y": 347.90548341102175,
+          "w": 93.63612097349477,
+          "h": 15.9999995,
+          "text": "L A N G U A G E S",
+          "fontSize": 11.9999995
+        },
+        {
+          "x": 52.6134794077716,
+          "y": 142.6059543651691,
+          "w": 78.27611021349522,
+          "h": 15.9999995,
+          "text": "S U M M A R Y",
+          "fontSize": 11.9999995
+        },
+        {
+          "x": 52.6134794077716,
+          "y": 470.905447086023,
+          "w": 107.37616727599286,
+          "h": 15.9999995,
+          "text": "I N T E R E N S H I P",
+          "fontSize": 11.9999995
+        },
+        {
+          "x": 51.1537562685934,
+          "y": 491.360406383733,
+          "w": 183.10932035284463,
+          "h": 14.994999391875005,
+          "text": "Webdevelopment Intern | CodSoft |",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 240.66937337210902,
+          "y": 491.360406383733,
+          "w": 119.8939611106684,
+          "h": 14.994999391875005,
+          "text": "Feb 2024 - March 2024",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 61.78300572570798,
+          "y": 510.5079055109204,
+          "w": 398.28315873836755,
+          "h": 13.997499508437503,
+          "text": "Developed and deployed four responsive web projects using HTML, CSS, and JavaScript.",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 61.78300572570798,
+          "y": 524.0079049484204,
+          "w": 59.33891404027016,
+          "h": 13.997499508437503,
+          "text": "Key projects",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 121.12675325305173,
+          "y": 524.0079049484204,
+          "w": 418.7811989302322,
+          "h": 13.997499508437503,
+          "text": ": Portfolio Website, Calculator, Landing Page, and Tic-Tac-Toe Game. AndEnhanced problem-",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 61.78300572570798,
+          "y": 537.5079043859204,
+          "w": 161.7964931919792,
+          "h": 13.997499508437503,
+          "text": "solving and time management skills.",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 51.1537562685934,
+          "y": 163.60273830769478,
+          "w": 480.0476593442268,
+          "h": 13.719139049644083,
+          "text": "I am a motivated and passionate individual aiming to build a successful career as a Web Developer and",
+          "fontSize": 9.719139049644083
+        },
+        {
+          "x": 51.1537562685934,
+          "y": 176.72685715285655,
+          "w": 480.0513976036566,
+          "h": 13.719139049644083,
+          "text": "Programmer. I am keen to participate in innovative projects and further develop my skills in both front-end and",
+          "fontSize": 9.719139049644083
+        },
+        {
+          "x": 51.1537562685934,
+          "y": 189.8509759980182,
+          "w": 480.0530220338106,
+          "h": 13.719139049644083,
+          "text": "back-end development. I am passionate about being part of a dynamic environment that nurtures creativity,",
+          "fontSize": 9.719139049644083
+        },
+        {
+          "x": 51.1537562685934,
+          "y": 202.97509484317987,
+          "w": 223.42080903740361,
+          "h": 13.719139049644083,
+          "text": "teamwork, and ongoing professional advancement.",
+          "fontSize": 9.719139049644083
+        },
+        {
+          "x": 51.1537562685934,
+          "y": 257.5676631750978,
+          "w": 9.719999595,
+          "h": 13.719999595,
+          "text": "🎓",
+          "fontSize": 9.719999595
+        },
+        {
+          "x": 60.86859961380824,
+          "y": 257.5676631750978,
+          "w": 204.5384193275655,
+          "h": 13.719999595,
+          "text": "B.E. in Electrical and Electronics Engineering",
+          "fontSize": 9.719999595
+        },
+        {
+          "x": 51.1537562685934,
+          "y": 271.0676626125978,
+          "w": 203.3138180285904,
+          "h": 13.719999595,
+          "text": "Karpagam Institute of Technology, Coimbatore",
+          "fontSize": 9.719999595
+        },
+        {
+          "x": 330.83061181539057,
+          "y": 249.76482205021603,
+          "w": 60.535919783919894,
+          "h": 14.994999391875005,
+          "text": "CGPA : 7.97",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 330.83061181539057,
+          "y": 269.4072060317834,
+          "w": 109.94586268192212,
+          "h": 14.994999391875005,
+          "text": "Graduation Year: 2026",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 51.1537562685934,
+          "y": 294.72049457706294,
+          "w": 10.994999391875005,
+          "h": 14.994999391875005,
+          "text": "🎓",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 62.14594331058559,
+          "y": 294.72049457706294,
+          "w": 210.76565988104718,
+          "h": 14.994999391875005,
+          "text": "Mariammal Girls Higherr Secondary School",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 69.92941193627438,
+          "y": 318.3179847188343,
+          "w": 19.733176827684257,
+          "h": 13.997499508437503,
+          "text": "HSC",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 107.58175411742673,
+          "y": 318.3179847188343,
+          "w": 23.191691590179513,
+          "h": 13.997499508437503,
+          "text": "2022",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 146.1364400109814,
+          "y": 318.3179847188343,
+          "w": 52.07484651146462,
+          "h": 13.997499508437503,
+          "text": "Percentage:",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 200.64360558984941,
+          "y": 318.3179847188343,
+          "w": 19.78837876402165,
+          "h": 13.997499508437503,
+          "text": "88%",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 350.38920475044915,
+          "y": 318.3179847188343,
+          "w": 22.657027705857196,
+          "h": 13.997499508437503,
+          "text": "SSLC",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 390.9712343095312,
+          "y": 318.3179847188343,
+          "w": 23.191691590179513,
+          "h": 13.997499508437503,
+          "text": "2020",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 437.2017011332617,
+          "y": 318.3179847188343,
+          "w": 52.074846511464706,
+          "h": 13.997499508437503,
+          "text": "Percentage:",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 491.70887046212954,
+          "y": 318.3179847188343,
+          "w": 19.788378764021708,
+          "h": 13.997499508437503,
+          "text": "84%",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 473.1554877851872,
+          "y": 383.1179532188354,
+          "w": 31.213506532587157,
+          "h": 13.997499508437503,
+          "text": "English",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 473.1554877851872,
+          "y": 401.1179524688354,
+          "w": 98.31176565137625,
+          "h": 13.997499508437503,
+          "text": "Tamil : Native Speaker",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 52.6134794077716,
+          "y": 555.7603957004,
+          "w": 147.4075607862681,
+          "h": 14.994999391875005,
+          "text": "Hindustan Electrical Limited",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 208.55488291021283,
+          "y": 555.7603957004,
+          "w": 122.93862176780725,
+          "h": 14.994999391875005,
+          "text": "| Transformer Company",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 335.76190510992,
+          "y": 555.7603957004,
+          "w": 105.24130134619584,
+          "h": 14.994999391875005,
+          "text": "| Dec 204 - Jan 2025",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 60.27545171352274,
+          "y": 577.075153664209,
+          "w": 476.5402014992908,
+          "h": 14.152651743048894,
+          "text": "Worked on the design, testing, and manufacturing of transformers.Participated in quality control and",
+          "fontSize": 10.152651743048894
+        },
+        {
+          "x": 60.27545171352274,
+          "y": 590.7846609969795,
+          "w": 99.76616960289677,
+          "h": 14.152651743048894,
+          "text": "assembly inspections.",
+          "fontSize": 10.152651743048894
+        },
+        {
+          "x": 51.1537562685934,
+          "y": 606.9871454159521,
+          "w": 78.06011772249495,
+          "h": 15.9999995,
+          "text": "P R O J E C T S",
+          "fontSize": 11.9999995
+        },
+        {
+          "x": 305.7043816623169,
+          "y": 348.8654545710229,
+          "w": 133.5121989619915,
+          "h": 15.9999995,
+          "text": "C E R T I F I C A T I O N S",
+          "fontSize": 11.9999995
+        },
+        {
+          "x": 320.1147805618836,
+          "y": 371.65795369633537,
+          "w": 81.76840546050782,
+          "h": 13.997499508437503,
+          "text": "CSS Fundamentals",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 320.1147805618836,
+          "y": 389.6579529463354,
+          "w": 37.36111324978693,
+          "h": 13.997499508437503,
+          "text": "Python3",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 320.1147805618836,
+          "y": 407.6579521963354,
+          "w": 14.370182656954865,
+          "h": 13.997499508437503,
+          "text": "IoT",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 320.1147805618836,
+          "y": 425.65795144633535,
+          "w": 19.143379403871617,
+          "h": 13.997499508437503,
+          "text": "PCB",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 320.1147805618836,
+          "y": 443.6579506963354,
+          "w": 133.13830481297038,
+          "h": 13.997499508437503,
+          "text": "Responsive Web Design - free",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 321.0405617733094,
+          "y": 461.6579499463354,
+          "w": 49.34634877686455,
+          "h": 13.997499508437503,
+          "text": "Code camp",
+          "fontSize": 9.997499508437503
+        },
+        {
+          "x": 65.18144308410642,
+          "y": 669.906046794331,
+          "w": 89.68818983799187,
+          "h": 15.9999995,
+          "text": "Smart Yoga Mat",
+          "fontSize": 11.9999995
+        },
+        {
+          "x": 54.1414465441063,
+          "y": 687.887878045088,
+          "w": 493.80625324973863,
+          "h": 14.154999576875,
+          "text": "Smart Yoga Mat that utilizes a camera to capture the user's posture during yoga sessions. The system",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 54.1414465441063,
+          "y": 701.387877482588,
+          "w": 493.8020941999123,
+          "h": 14.154999576875,
+          "text": "compares the captured images with pre-fed asana images to detect incorrect postures. It provides real-time",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 54.1414465441063,
+          "y": 714.8878769200879,
+          "w": 250.29164639618074,
+          "h": 14.154999576875,
+          "text": "feedback to users via a mobile app and tracks progress.",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 162.38477803396728,
+          "y": 673.250278654988,
+          "w": 2.316097996679913,
+          "h": 12.155274636196875,
+          "text": "|",
+          "fontSize": 8.155274636196875
+        },
+        {
+          "x": 169.45693025754426,
+          "y": 673.250278654988,
+          "w": 217.24167948509975,
+          "h": 12.155274636196875,
+          "text": "Status : UI/UX Design completed, Building mat prototype",
+          "fontSize": 8.155274636196875
+        },
+        {
+          "x": 60.4000437333314,
+          "y": 733.661012287874,
+          "w": 31.07603572601514,
+          "h": 14.994999391875005,
+          "text": "Smart",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 95.74379226067515,
+          "y": 733.661012287874,
+          "w": 66.60353316240267,
+          "h": 14.994999391875005,
+          "text": "E- Foodtruck",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 202.3198162200073,
+          "y": 732.9110123191239,
+          "w": 119.08019443877504,
+          "h": 14.994999391875005,
+          "text": "Responsive Webpages",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 373.2075418996851,
+          "y": 732.1610123503739,
+          "w": 148.10000651101623,
+          "h": 14.994999391875005,
+          "text": "IoT based Home Automation",
+          "fontSize": 10.994999391875005
+        },
+        {
+          "x": 43.623730182344495,
+          "y": 755.105995244333,
+          "w": 98.68814326299385,
+          "h": 15.9999995,
+          "text": "A D D I T I O N A L",
+          "fontSize": 11.9999995
+        },
+        {
+          "x": 59.186229533906996,
+          "y": 780.5512023341159,
+          "w": 46.60312643935295,
+          "h": 13.149999468750007,
+          "text": "Workshops",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 112.07371865526153,
+          "y": 780.5512023341159,
+          "w": 38.268373013234424,
+          "h": 13.149999468750007,
+          "text": "Attended",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 156.62498819895856,
+          "y": 780.5512023341159,
+          "w": 2.0129998831250018,
+          "h": 13.149999468750007,
+          "text": ":",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 171.2291973654498,
+          "y": 780.5512023341159,
+          "w": 19.310707503737138,
+          "h": 13.149999468750007,
+          "text": "Web",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 196.82283754904807,
+          "y": 780.5512023341159,
+          "w": 55.53216431420981,
+          "h": 13.149999468750007,
+          "text": "Development",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 258.64073462330225,
+          "y": 780.5512023341159,
+          "w": 42.40901521630764,
+          "h": 13.149999468750007,
+          "text": "Workshop",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 307.3326768194713,
+          "y": 780.5512023341159,
+          "w": 2.507099854437502,
+          "h": 13.149999468750007,
+          "text": "-",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 316.12588172808773,
+          "y": 780.5512023341159,
+          "w": 18.493689618729615,
+          "h": 13.149999468750007,
+          "text": "Aadi",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 340.9060015205827,
+          "y": 780.5512023341159,
+          "w": 49.67217007232617,
+          "h": 13.149999468750007,
+          "text": "Foundation,",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 396.8647700639672,
+          "y": 780.5512023341159,
+          "w": 33.37667509045503,
+          "h": 13.149999468750007,
+          "text": "Harness",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 436.5258021364242,
+          "y": 780.5512023341159,
+          "w": 7.601425694323918,
+          "h": 13.149999468750007,
+          "text": "in",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 450.41032310790257,
+          "y": 780.5512023341159,
+          "w": 27.116827102882215,
+          "h": 13.149999468750007,
+          "text": "Wiring",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 483.81004104124776,
+          "y": 780.5512023341159,
+          "w": 44.41624214132314,
+          "h": 13.149999468750007,
+          "text": "Workshop,",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 59.186229533906996,
+          "y": 793.301201802866,
+          "w": 38.28603597239844,
+          "h": 13.149999468750007,
+          "text": "E-Vehicle",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 59.186229533906996,
+          "y": 810.2201930979079,
+          "w": 302.6786235494402,
+          "h": 13.149999468750007,
+          "text": "Active participant in Hackathons, Coding Contests and Paper Presentation",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 290.1975360509355,
+          "y": 108.73767139234758,
+          "w": 119.97198458285834,
+          "h": 10.577006189958064,
+          "text": "linkedin.com/in/sri-dharshini-322580258",
+          "fontSize": 6.577006189958064
+        },
+        {
+          "x": 424.66486230563,
+          "y": 108.02627045398933,
+          "w": 127.51793355702671,
+          "h": 11.000087100329692,
+          "text": "https://github.com/Sridharshinikittusamy",
+          "fontSize": 7.000087100329692
+        },
+        {
+          "x": 58.88274654655213,
+          "y": 624.8370726722052,
+          "w": 123.22823524048995,
+          "h": 15.9999995,
+          "text": "E-Commerce Website",
+          "fontSize": 11.9999995
+        },
+        {
+          "x": 189.91242888698181,
+          "y": 626.4716167540989,
+          "w": 2.598599849125002,
+          "h": 13.149999468750007,
+          "text": "|",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 197.83430355690368,
+          "y": 626.4716167540989,
+          "w": 78.85293374271089,
+          "h": 13.149999468750007,
+          "text": "Currently working",
+          "fontSize": 9.149999468750007
+        },
+        {
+          "x": 52.6134794077716,
+          "y": 642.466583937642,
+          "w": 42.28165301326437,
+          "h": 14.154999576875,
+          "text": "Currently",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 105.73970371917883,
+          "y": 642.466583937642,
+          "w": 51.9334503861061,
+          "h": 14.154999576875,
+          "text": "developing",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 168.51705062845593,
+          "y": 642.466583937642,
+          "w": 5.392304775320625,
+          "h": 14.154999576875,
+          "text": "a",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 184.75381300192413,
+          "y": 642.466583937642,
+          "w": 39.440335356652675,
+          "h": 14.154999576875,
+          "text": "real-time",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 235.03848648172934,
+          "y": 642.466583937642,
+          "w": 58.996284616821335,
+          "h": 14.154999576875,
+          "text": "E-Commerce",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 304.8791092217033,
+          "y": 642.466583937642,
+          "w": 35.56364941818123,
+          "h": 14.154999576875,
+          "text": "website",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 351.287096763037,
+          "y": 642.466583937642,
+          "w": 12.241171814951144,
+          "h": 14.154999576875,
+          "text": "for",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 374.37404040108095,
+          "y": 642.466583937642,
+          "w": 5.392304775320625,
+          "h": 14.154999576875,
+          "text": "a",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 390.6107798245501,
+          "y": 642.466583937642,
+          "w": 29.17047335956358,
+          "h": 14.154999576875,
+          "text": "Oxyen",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 430.62527398227945,
+          "y": 642.466583937642,
+          "w": 23.292649729472824,
+          "h": 14.154999576875,
+          "text": "plant",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 464.7638222848399,
+          "y": 642.466583937642,
+          "w": 45.45810920591197,
+          "h": 14.154999576875,
+          "text": "&nurssery",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 521.0665084138946,
+          "y": 642.466583937642,
+          "w": 25.344597518974798,
+          "h": 14.154999576875,
+          "text": "using",
+          "fontSize": 10.154999576875
+        },
+        {
+          "x": 52.6134794077716,
+          "y": 655.966583375142,
+          "w": 162.70329477069575,
+          "h": 14.154999576875,
+          "text": "HTML,CSS,JavaScript and Boostrap",
+          "fontSize": 10.154999576875
+        }
+      ]
+    }
+  ]
+}

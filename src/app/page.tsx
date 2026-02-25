@@ -533,7 +533,7 @@ export default function Home() {
                 {selectedSuggestion.existingContent && selectedSuggestion.enhancedContent ? (
                   <>
                     {/* Current */}
-                    <div className="flex-1 border-b border-border/20 px-5 py-4">
+                    <div className="px-5 pt-4 pb-2">
                       <div className="mb-3 flex items-center gap-2">
                         <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-400" />
                         <span className="text-sm font-semibold text-red-400">Current Content</span>
@@ -546,7 +546,7 @@ export default function Home() {
                     </div>
 
                     {/* Enhanced */}
-                    <div className="flex-1 px-5 py-4">
+                    <div className="px-5 pt-2 pb-4">
                       <div className="mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400" />
