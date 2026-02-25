@@ -96,9 +96,31 @@ export async function POST(request: Request) {
       }
     }
 
+    // ── Load & Split LaTeX Template ──────────────────────────
+    let latexPreamble = "";
+    let latexSkeleton = "";
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      const templatePath = path.join(process.cwd(), "Plans", "reesume.tex");
+      const fullTemplate = fs.readFileSync(templatePath, "utf-8");
+
+      // Split by \begin{document}
+      const parts = fullTemplate.split(/\\begin\{document\}/);
+      if (parts.length === 2) {
+        latexPreamble = parts[0] + "\\begin{document}\n";
+        latexSkeleton = parts[1].replace(/\\end\{document\}/, "").trim();
+      } else {
+        latexPreamble = "";
+        latexSkeleton = fullTemplate; // Fallback
+      }
+    } catch (err) {
+      log("warn", "Could not load reesume.tex template", { error: err });
+    }
+
     // ── Build the prompt ──────────────────────────────────────
     const prompt = `Analyze the following resume against the given job description.
-
+    
 Return ONLY valid JSON in this exact format:
 {
   "score": <number 0-100>,
@@ -108,42 +130,46 @@ Return ONLY valid JSON in this exact format:
     "education": <number 0-100>,
     "overall": <number 0-100>
   },
+  "headersDetected": ["List ALL headings found in the original resume BEFORE generating content"],
   "missingKeywords": [
     { "keyword": "string", "priority": "high" | "medium" | "low", "context": "why this matters for the role" }
   ],
   "suggestions": [
     {
-      "section": "Summary" | "Experience" | "Skills" | "Education" | "Projects" | "General",
+      "section": "string (name of the resume section)",
       "suggestion": "brief description of the improvement",
       "impact": "high" | "medium" | "low",
       "existingContent": "the exact sentence or bullet point from the resume that should be improved (copy verbatim from the resume text)",
       "enhancedContent": "the rewritten, optimized version incorporating missing keywords, power verbs, and quantified achievements"
     }
-  ]
+  ],
+  "latexBody": "The LaTeX CONTENT ONLY (no preamble). Generate EVERYTHING that goes between \\begin{document} and \\end{document}. You must use the template structure but insure ZERO DATA LOSS."
 }
 
-Scoring Rubric:
-- 90-100: Near-perfect match — resume covers almost all required skills, experience level, and qualifications.
-- 70-89: Strong match — resume aligns well but has a few notable gaps.
-- 50-69: Moderate match — resume covers some requirements but is missing significant qualifications.
-- Below 50: Weak match — resume lacks most of the key requirements.
-
-Rules:
-- Score honestly using the rubric above. Do not inflate.
-- missingKeywords: List 3-8 missing skills/technologies/qualifications from the JD. Assign priority based on how critical they are to the role ("high" = deal-breaker, "medium" = important, "low" = nice-to-have).
-- suggestions: List 3-6 specific, actionable improvements. For EACH suggestion:
-  * "existingContent" MUST be an exact quote copied from the RESUME text that needs improvement. If the suggestion is about adding new content, use the closest relevant line from the resume.
-  * "enhancedContent" MUST be a polished, rewritten version that incorporates missing keywords, uses industry-standard power verbs (e.g., "Spearheaded", "Architected", "Optimized"), and includes quantified metrics where possible.
-  * Tag each with the resume section it applies to and its expected impact on match score.
-- scoreBreakdown: Rate each dimension independently.
+RULES FOR CONTENT PRESERVATION (SACRED):
+1. ROLE: You are a "Data Integrity Specialist". Your #1 priority is 100% data retention.
+2. DISCOVERY: Explicitly list all sections from the original resume in "headersDetected".
+3. NO TRUNCATION: Do NOT omit any section, any company, any project, or any bullet point. If it's in the original, it MUST be in the LaTeX.
+4. DYNAMIC SECTIONS:
+   - If a section in the original resume doesn't exist in the provided skeleton, CREATE it using the \\section macro and appropriate list macros.
+   - Use \\resumeSubheading for (Company, Date, Role, location).
+   - Use \\resumeItemListStart / \\resumeItem for bullets.
+   - Use the comma-separated Technical Skills pattern for skills.
+5. FALLBACK: For non-standard sections (Awards, Volunteer, etc.), use \\section followed by \\resumeItemListStart to ensure formatting consistency.
+6. STYLING: Styling is secondary to content. If you aren't sure which macro to use, use a simple itemized list. NEVER omit data.
+7. OPTIMIZATION: Only use "enhancedContent" where it maps directly to an original item. Do not "simplify" or "summarize" to save space.
+8. ESCAPING: Use proper LaTeX escapes: & -> \\&, % -> \\%, $ -> \\$, etc.
+9. IDENTITY: Replace the placeholder header (First Last, contact info) with the user's actual personal data.
 
 ---
+LATEX SKELETON (FOR BODY STYLE):
+${latexSkeleton}
 
+---
 JOB DESCRIPTION:
 ${jobDescription}
 
 ---
-
 RESUME:
 ${resume}`;
 
@@ -154,14 +180,15 @@ ${resume}`;
       messages: [
         {
           role: "system",
-          content: "You are an expert resume optimizer and ATS (Applicant Tracking System) specialist. You provide brutally honest, data-driven resume analysis. Always respond with valid JSON only.",
+          content: "You are an expert resume optimizer and LaTeX specialist. Your mandate is ZERO INFORMATION LOSS. You generate the body of a LaTeX resume while maintaining its structural essence. You always respond with valid JSON.",
         },
         {
           role: "user",
           content: prompt,
         },
       ],
-      temperature: 0.3,
+      temperature: 0.1, // Highly deterministic for better extraction
+      max_tokens: 4096,   // Increased for long resumes
       response_format: { type: "json_object" },
     });
 
@@ -177,11 +204,15 @@ ${resume}`;
       throw new Error("Unexpected response structure from AI model");
     }
 
+    // Reconstruct full LaTeX string
+    const fullLatex = `${latexPreamble}${parsed.latexBody}\n\\end{document}`;
+
     const result = {
       score: Math.round(parsed.score),
       scoreBreakdown: parsed.scoreBreakdown || null,
       missingKeywords: parsed.missingKeywords,
       suggestions: parsed.suggestions,
+      latexCode: fullLatex,
     };
 
     // ── Store in cache ────────────────────────────────────────
